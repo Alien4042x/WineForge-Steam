@@ -1,0 +1,42 @@
+{
+  "clientSha256": "625715ada315323351ada75a077142c15d4b742be2db9e63ec354828082ab194",
+  "packagedProfileSha256": "4409973e333dc1522fece2513e1f8fd94acbb24d2dfd6bd90bb70032a8432075",
+  "sourceHookSha256": "3ea59989827ca870405118db7e59788240d9c05ca4599e87544bfe4a14945690",
+  "signaturesExpected": 16,
+  "signaturesResolved": 16,
+  "layoutValidated": true,
+  "layout": {
+    "toolAppID": "0x68",
+    "toolInstall": "0x60",
+    "managerEnabled": "0x810"
+  },
+  "resolvedRVAs": {
+    "CCompatManager::Init": "0x6ad964",
+    "CCompatManager::BIsCompatibilityToolEnabled": "0x6a5adc",
+    "CCompatManager::YldRegisterTool": "0x6a9bc0",
+    "CCompatManager::GetOSListOverrideForApp.oslist_gate": "0x6a56f8",
+    "CCompatManager::ResolveCompatToolForApp.local_redirect": "0x6a57e8",
+    "CAppManager::TerminateProcessByPid": "0xdd4b0",
+    "CCompatManager::FindToolForTargetApp": "0x6a51e4",
+    "CCompatManager::GetValidPlatforms": "0x6a3c50",
+    "CWebUIJobDispatcher::RegisterHandler": "0x93e60",
+    "CWebUITransport::DispatchJob": "0x94064",
+    "CWebUIMsgJob::SendResponse": "0x9453c",
+    "CCompatManager::SetCompatToolMapping": "0x6a4f34",
+    "CCompatManager::InternalSpecifyCompatTool": "0x6a40b4",
+    "CCompatManager::FindMapping": "0x6a53c0",
+    "CCompatManager::GetWildcardMapping": "0x6a5438",
+    "LaunchBuilder::SteamVRSupportCheck": "0xb25410"
+  },
+  "clientCodeExecuted": false,
+  "clientUnchanged": true,
+  "originalPassiveResultSHA256": "2c2a071ae6423e1c2a856cf128ace5f222f5414633c511f33765918e697c4e2a",
+  "originalWineResultSHA256": "c484214da0121f6c3d6a83ff7243caa607cc2d3d008ca41777b6e7e20e3c6da5",
+  "originalWineLogSHA256": "4a727a6e50a0d73623d37ad57e19775f3c7a0ea5ea3d4bd9341ba343a67ec189",
+  "originalWineApiAndMappingControlPassed": true,
+  "originalWineControlDurationSeconds": 32.128,
+  "realGameTested": false,
+  "originalHookSession9of9": true,
+  "extractedBuildExecuted": false,
+  "evidenceScope": "Reference evidence for the exact previously built source and current client profile. The extracted build entry and future binaries need their own validation."
+}

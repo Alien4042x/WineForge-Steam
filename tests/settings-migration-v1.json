@@ -1,0 +1,261 @@
+[
+  {
+    "name": "HUD literal import preserves custom argv",
+    "before": "MTL_HUD_ENABLED=1 %command% --arg=\"a b\"",
+    "safe": true,
+    "changes": {
+      "metalHud": true
+    },
+    "after": " %command% --arg=\"a b\""
+  },
+  {
+    "name": "WFUSync explicit zero",
+    "before": "WINEWFUSYNC=0 %command%",
+    "safe": true,
+    "changes": {
+      "wfusync": false
+    },
+    "after": " %command%"
+  },
+  {
+    "name": "old MSync is not WFUSync",
+    "before": "WINEMSYNC=1 %command%",
+    "safe": true,
+    "changes": {},
+    "after": "WINEMSYNC=1 %command%",
+    "warning": "MSync is not WFUSync"
+  },
+  {
+    "name": "DXMT NVIDIA is one profile",
+    "before": "CX_GRAPHICS_BACKEND=dxmt DXMT_ENABLE_NVEXT=1 %command% --custom",
+    "safe": true,
+    "changes": {
+      "backend": "dxmt",
+      "upscaling": "nvidia"
+    },
+    "after": "  %command% --custom"
+  },
+  {
+    "name": "D3DMetal NVIDIA is one profile",
+    "before": "CX_GRAPHICS_BACKEND=d3dmetal D3DM_ENABLE_METALFX=1 %command%",
+    "safe": true,
+    "changes": {
+      "backend": "d3dmetal",
+      "upscaling": "nvidia"
+    },
+    "after": "  %command%"
+  },
+  {
+    "name": "automatic backend cannot infer NVIDIA",
+    "before": "CX_GRAPHICS_BACKEND=automatic D3DM_ENABLE_METALFX=1 %command%",
+    "safe": true,
+    "changes": {
+      "backend": "inherit"
+    },
+    "after": " D3DM_ENABLE_METALFX=1 %command%",
+    "warning": "ambiguous"
+  },
+  {
+    "name": "DLSS off does not destroy AMD",
+    "before": "CX_GRAPHICS_BACKEND=d3dmetal D3DM_ENABLE_METALFX=0 %command%",
+    "safe": true,
+    "changes": {
+      "backend": "d3dmetal"
+    },
+    "after": " D3DM_ENABLE_METALFX=0 %command%",
+    "warning": "ambiguous"
+  },
+  {
+    "name": "conflicting old profile flags",
+    "before": "CX_GRAPHICS_BACKEND=dxmt D3DM_ENABLE_METALFX=1 DXMT_ENABLE_NVEXT=1 %command%",
+    "safe": true,
+    "changes": {
+      "backend": "dxmt"
+    },
+    "after": " D3DM_ENABLE_METALFX=1 DXMT_ENABLE_NVEXT=1 %command%",
+    "warning": "ambiguous"
+  },
+  {
+    "name": "unsupported DXVK kept intact",
+    "before": "CX_GRAPHICS_BACKEND=dxvk %command%",
+    "safe": true,
+    "changes": {},
+    "after": "CX_GRAPHICS_BACKEND=dxvk %command%",
+    "warning": "Unsupported legacy backend"
+  },
+  {
+    "name": "unsupported WineD3D plus independent HUD",
+    "before": "CX_GRAPHICS_BACKEND=wined3d MTL_HUD_ENABLED=0 %command%",
+    "safe": true,
+    "changes": {
+      "metalHud": false
+    },
+    "after": "CX_GRAPHICS_BACKEND=wined3d  %command%",
+    "warning": "Unsupported legacy backend"
+  },
+  {
+    "name": "last literal assignment wins",
+    "before": "WINEWFUSYNC=0 WINEWFUSYNC=1 %command%",
+    "safe": true,
+    "changes": {
+      "wfusync": true
+    },
+    "after": "  %command%"
+  },
+  {
+    "name": "quoted value is literal",
+    "before": "MTL_HUD_ENABLED=\"1\" %command% --custom",
+    "safe": true,
+    "changes": {
+      "metalHud": true
+    },
+    "after": " %command% --custom"
+  },
+  {
+    "name": "whole quoted command is not assignment",
+    "before": "\"WINEWFUSYNC=0\" %command%",
+    "safe": false,
+    "changes": {},
+    "after": "\"WINEWFUSYNC=0\" %command%",
+    "warning": "command wrapper"
+  },
+  {
+    "name": "shell substitution preserved",
+    "before": "WINEWFUSYNC=$(printf 1) %command%",
+    "safe": false,
+    "changes": {},
+    "after": "WINEWFUSYNC=$(printf 1) %command%",
+    "warning": "Complex"
+  },
+  {
+    "name": "complex pipeline preserved",
+    "before": "WINEWFUSYNC=0 %command% | cat",
+    "safe": false,
+    "changes": {},
+    "after": "WINEWFUSYNC=0 %command% | cat",
+    "warning": "Complex"
+  },
+  {
+    "name": "quoted substitution stays user data",
+    "before": "USER='$(touch /tmp/wf-do-not-run)' WINEWFUSYNC=0 %command% --literal",
+    "safe": true,
+    "changes": {
+      "wfusync": false
+    },
+    "after": "USER='$(touch /tmp/wf-do-not-run)'  %command% --literal"
+  },
+  {
+    "name": "lookalike key untouched",
+    "before": "MY_WINEWFUSYNC=0 %command%",
+    "safe": true,
+    "changes": {},
+    "after": "MY_WINEWFUSYNC=0 %command%"
+  },
+  {
+    "name": "game argument after command untouched",
+    "before": "%command% WINEWFUSYNC=0",
+    "safe": true,
+    "changes": {},
+    "after": "%command% WINEWFUSYNC=0"
+  },
+  {
+    "name": "no automatic relocation without command",
+    "before": "WINEWFUSYNC=1 -custom",
+    "safe": false,
+    "changes": {},
+    "after": "WINEWFUSYNC=1 -custom",
+    "warning": "standalone %command%"
+  },
+  {
+    "name": "quoted placeholder not rewritten",
+    "before": "WINEWFUSYNC=0 \"%command%\"",
+    "safe": false,
+    "changes": {},
+    "after": "WINEWFUSYNC=0 \"%command%\"",
+    "warning": "standalone %command%"
+  },
+  {
+    "name": "env wrapper preserved",
+    "before": "env WINEWFUSYNC=0 %command%",
+    "safe": false,
+    "changes": {},
+    "after": "env WINEWFUSYNC=0 %command%",
+    "warning": "command wrapper"
+  },
+  {
+    "name": "malformed quote preserved",
+    "before": "WINEWFUSYNC='0 %command%",
+    "safe": false,
+    "changes": {},
+    "after": "WINEWFUSYNC='0 %command%",
+    "warning": "Complex"
+  },
+  {
+    "name": "unknown HUD value preserved",
+    "before": "MTL_HUD_ENABLED=true %command%",
+    "safe": true,
+    "changes": {},
+    "after": "MTL_HUD_ENABLED=true %command%",
+    "warning": "unknown value"
+  },
+  {
+    "name": "spatial config preserves unrelated entries",
+    "before": "CX_GRAPHICS_BACKEND=dxmt DXMT_METALFX_SPATIAL_SWAPCHAIN=1 DXMT_CONFIG='foo=one;d3d11.metalSpatialUpscaleFactor=2;bar=two' USER=1 %command% -arg",
+    "safe": true,
+    "changes": {
+      "backend": "dxmt",
+      "dxmtSpatial": "2.0"
+    },
+    "after": "  DXMT_CONFIG='foo=one;bar=two' USER=1 %command% -arg"
+  },
+  {
+    "name": "old spatial default is two",
+    "before": "DXMT_METALFX_SPATIAL_SWAPCHAIN=1 %command%",
+    "safe": true,
+    "changes": {
+      "dxmtSpatial": "2.0"
+    },
+    "after": " %command%"
+  },
+  {
+    "name": "spatial off is explicit",
+    "before": "DXMT_METALFX_SPATIAL_SWAPCHAIN=0 DXMT_CONFIG='foo=one;d3d11.metalSpatialUpscaleFactor=2' %command%",
+    "safe": true,
+    "changes": {
+      "dxmtSpatial": "off"
+    },
+    "after": " DXMT_CONFIG='foo=one' %command%"
+  },
+  {
+    "name": "custom spatial factor preserved",
+    "before": "DXMT_METALFX_SPATIAL_SWAPCHAIN=1 DXMT_CONFIG='d3d11.metalSpatialUpscaleFactor=5' %command%",
+    "safe": true,
+    "changes": {},
+    "after": "DXMT_METALFX_SPATIAL_SWAPCHAIN=1 DXMT_CONFIG='d3d11.metalSpatialUpscaleFactor=5' %command%",
+    "warning": "custom spatial"
+  },
+  {
+    "name": "conflicting repeated config preserved",
+    "before": "DXMT_METALFX_SPATIAL_SWAPCHAIN=1 DXMT_CONFIG='foo=1' DXMT_CONFIG='d3d11.metalSpatialUpscaleFactor=2;bar=2' %command%",
+    "safe": true,
+    "changes": {},
+    "after": "DXMT_METALFX_SPATIAL_SWAPCHAIN=1 DXMT_CONFIG='foo=1' DXMT_CONFIG='d3d11.metalSpatialUpscaleFactor=2;bar=2' %command%",
+    "warning": "Repeated DXMT_CONFIG"
+  },
+  {
+    "name": "config without spatial toggle untouched",
+    "before": "DXMT_CONFIG='d3d11.metalSpatialUpscaleFactor=2;foo=1' %command%",
+    "safe": true,
+    "changes": {},
+    "after": "DXMT_CONFIG='d3d11.metalSpatialUpscaleFactor=2;foo=1' %command%"
+  },
+  {
+    "name": "Retina controller AVX and Czech args preserved",
+    "before": "NOTPROTON_RETINA=1 NOTPROTON_RAW_CONTROLLERS=1 ROSETTA_ADVERTISE_AVX=0 WINEWFUSYNC=1 %command% 'žluťoučký kůň'",
+    "safe": true,
+    "changes": {
+      "wfusync": true
+    },
+    "after": "NOTPROTON_RETINA=1 NOTPROTON_RAW_CONTROLLERS=1 ROSETTA_ADVERTISE_AVX=0  %command% 'žluťoučký kůň'"
+  }
+]
