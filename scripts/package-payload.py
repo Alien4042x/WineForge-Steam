@@ -29,6 +29,7 @@ files = {
     'run': root / 'compat_run.sh',
     'wineforge-native-steam.dylib': root / 'build/wineforge-native-steam.dylib',
     'wineforge-overlay-shim.dylib': root / 'build/wineforge-overlay-shim.dylib',
+    'wineforge-client-check': root / 'build/wineforge-client-check',
     'SETTINGS_CONTRACT_V1.md': root / 'SETTINGS_CONTRACT_V1.md',
     'settings-migration-v1.json': root / 'tests/settings-migration-v1.json',
     'Licenses/NotProton/LICENSE': root / 'LICENSE',
@@ -46,6 +47,9 @@ manifest = {
     'entry': 'run', 'hook': 'wineforge-native-steam.dylib',
     'minimumMacOS': '15.0', 'x86_64Slice': 'inert',
     'files': metadata,
+    'clientCompatibility': {
+        'mode': 'anchor-layout-v1', 'checker': 'wineforge-client-check', 'protocolVersion': 1,
+    },
     'supportedClient': {
         'sha256': client, 'profile': 'client-profile.json', 'architecture': 'arm64',
         'signaturesExpected': 16, 'signaturesResolved': 16,
@@ -75,7 +79,7 @@ for relative, file in files.items():
     target = output / relative
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(file, target)
-for relative in ('run', 'wineforge-native-steam.dylib', 'wineforge-overlay-shim.dylib'):
+for relative in ('run', 'wineforge-native-steam.dylib', 'wineforge-overlay-shim.dylib', 'wineforge-client-check'):
     (output / relative).chmod(0o755)
 (output / 'native-client-payload.json').write_text(json.dumps(manifest, indent=2) + '\n')
 print('Candidate payload exported. Steam and installed application unchanged.')

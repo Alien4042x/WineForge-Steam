@@ -1,8 +1,11 @@
 # WineForge native Steam game settings protocol 1
 
-Status: native-side candidate. App-side implementation and connected validation
-are still required. No game-ready or integration-ready marker follows from this
-protocol, a panel save, its offline tests, or the new hook build.
+Developer reference for the interface between the native Steam settings panel
+and the WineForge host. Players configure games through the panel. The host
+implements the settings service and stores their profiles.
+
+This document specifies protocol behavior. Live Steam connection, game launches
+and graphics require separate validation.
 
 ## Ownership and transport
 
@@ -10,7 +13,7 @@ The WineForge game database is the only stored game-profile authority. Steam
 launch options remain user command text, not a second settings database. Both
 launch origins build their plan from the same AppID/profile resolver. Updating
 one setting must rebuild backend libraries, GPU identity, DLL overrides and
-other dependent plan fields; do not forward a single legacy environment value.
+other dependent plan fields. Do not forward a single legacy environment value.
 
 The app owns an authenticated loopback settings service, independent of the
 Tauri window lifetime. Before opening Steam it publishes `settings-bridge.json`
@@ -26,7 +29,7 @@ It never starts an unversioned app executable or guesses a server address. The
 app must start/restart its headless service for both app-opened and independently
 started Steam, retain the advertised address for the integration session, and
 withdraw the descriptor on disable. Every request must also verify integration
-enabled/ownership and the installation nonce. Bind IPv4 loopback only; reject
+enabled/ownership and the installation nonce. Bind IPv4 loopback only. Reject
 foreign Origin, non-JSON input, oversized bodies, invalid AppIDs and unknown
 fields. CORS permits only the observed, supported Steam UI origin and required
 methods/headers. CSP/CORS in actual Steam are an untested connected gate.
@@ -61,11 +64,11 @@ GET does not create a bottle, install Steam, or change a runtime.
 
 | Field | Override values | Meaning |
 | --- | --- | --- |
-| backend | inherit, d3dmetal, dxmt | Automatic = existing per-game/global Steam Play/bottle resolver; new default D3DMetal |
+| backend | inherit, d3dmetal, dxmt | Automatic uses the existing per-game/global Steam Play/bottle resolver. New default D3DMetal |
 | upscaling | inherit, default, amd, nvidia | Panel offers WineForge inheritance, AMD FSR and NVIDIA MetalFX. Existing default overrides remain explicit neutral data |
-| wfusync | null, true, false | null uses existing resolver, including preserved explicit advanced `WINEWFUSYNC=0`; new environments default on |
-| metalHud | null, true, false | null uses existing resolver; explicit off emits `MTL_HUD_ENABLED=0` |
-| dxmtSpatial | inherit, off, 1.5, 1.72, 2.0, 3.0 (strings) | Independent of NVIDIA profile; saved while D3DMetal is selected, emitted only for DXMT |
+| wfusync | null, true, false | null uses the existing resolver, including preserved explicit advanced `WINEWFUSYNC=0`. New environments default on |
+| metalHud | null, true, false | null uses the existing resolver. Explicit off emits `MTL_HUD_ENABLED=0` |
+| dxmtSpatial | inherit, off, 1.5, 1.72, 2.0, 3.0 (strings) | Independent of NVIDIA profile. Saved while D3DMetal is selected, emitted only for DXMT |
 
 Game override precedes inherited defaults. Keep current advanced-env inheritance
 for untouched fields. An explicit panel on/off change normalizes conflicting
@@ -80,8 +83,8 @@ through a disabled hidden compatibility option. Loading the panel does not
 convert or write it. Selecting WineForge inheritance explicitly clears that
 override through the existing versioned PATCH.
 
-Profile generation owns its GPU identity/NV extension/DLL routing fields;
-unrelated advanced tuning such as D3DM_MAX_FPS and other DXMT_CONFIG entries
+Profile generation owns its GPU identity/NV extension/DLL routing fields.
+Unrelated advanced tuning such as D3DM_MAX_FPS and other DXMT_CONFIG entries
 remains allowed. Strip legacy/inherited panel-owned backend/profile values
 before resolution, then derive all these fields from the canonical selection:
 
@@ -92,7 +95,7 @@ before resolution, then derive all these fields from the canonical selection:
 - DXMT NVIDIA: `DXMT_ENABLE_NVEXT=1` and managed builtin nvapi64/nvngx.
 - Default: no stale AMD/NVIDIA identity or NV extension fields/overrides.
 - AMD on effective DXMT has no implementation in the current app. Reject a new
-  incompatible selection with HTTP 422; do not advertise a working AMD DXMT
+  incompatible selection with HTTP 422. Do not advertise a working AMD DXMT
   profile or silently choose another backend.
 - DXMT spatial On sets `DXMT_METALFX_SPATIAL_SWAPCHAIN=1` and exactly one
   `d3d11.metalSpatialUpscaleFactor=<factor>` entry. Off explicitly emits 0 and
@@ -102,26 +105,22 @@ before resolution, then derive all these fields from the canonical selection:
 
 AVX2, Retina and raw-controller switches are not retained in the new panel:
 the current shared runner has no canonical settings implementation for them.
-Their existing launch-option text is preserved; do not reinterpret these keys
+Their existing launch-option text is preserved. Do not reinterpret these keys
 as functioning WineForge settings.
 
-## Legacy migration
+## Optional import of old launch options
 
-There is no global, automatic Steam-options sweep. The panel offers a per-AppID
-preview and explicit import of literal, recognized assignments preceding the
-single standalone `%command%` in a simple command. Complex shell commands,
-substitutions, ambiguous backend/profile combinations, unsupported backends,
-unknown values and custom spatial factors remain unchanged with an explanation.
-No `%command%` means no safe import; the old relocation sweep is removed.
+This applies only when a player chooses to import existing Steam Launch Options
+into a WineForge game profile. New setups use the panel directly. No automatic
+sweep of Steam launch options takes place.
 
-Recognized exact keys are CX_GRAPHICS_BACKEND, WINEMSYNC, WINEWFUSYNC,
-MTL_HUD_ENABLED, D3DM_ENABLE_METALFX, DXMT_ENABLE_NVEXT,
-DXMT_METALFX_SPATIAL_SWAPCHAIN and DXMT_CONFIG's spatial-factor entry only.
-MSync is not WFUSync: preserve WINEMSYNC and ask the user to choose WFUSync
-explicitly. Only WINEWFUSYNC 0/1 imports its existing meaning. D3DMetal/DXMT
-DLSS=1 imports NVIDIA only for its unambiguous matching backend. DLSS=0 does
-not justify destroying an existing AMD profile. Preserve other DXMT_CONFIG
-entries, custom arguments, whitespace outside removed spans and arbitrary keys.
+The panel previews literal assignments before one standalone `%command%`.
+For example, `CX_GRAPHICS_BACKEND=dxmt %command%` can import the DXMT backend.
+`WINEMSYNC` is an old MSync setting. It is preserved and never converted to
+WFUSync. Supported `WINEWFUSYNC=0/1` values import the WFUSync setting.
+The exact supported inputs and conservative rewrites are recorded in the shared
+[migration fixtures](tests/settings-migration-v1.json). Complex commands,
+unknown values, ambiguous combinations and custom spatial factors are preserved.
 
 `POST /v1/games/<AppID>/settings/migrate` uses the same auth/If-Match and body:
 `{protocolVersion:1,appID,launchOptions:<exact original string>}`. The app uses
@@ -136,19 +135,18 @@ Only after that successful database commit may the panel call
 SteamClient.Apps.SetAppLaunchOptions, and only if the current details still equal
 cleanup.before and cleanup.after exactly matches the panel's own parser. A
 failed or concurrent cleanup keeps the saved profile and reports pending
-cleanup; it never reapplies old values over newer WineForge settings. Both
+cleanup. It never reapplies old values over newer WineForge settings. Both
 launch origins ignore migrated legacy settings as authority and must use the
 saved canonical profile. Read-only preview never changes Steam options.
 
-## App-side work still required
+## Host integration and validation
 
-Implement this service/descriptor lifecycle, GET/PATCH/migrate handlers,
-per-AppID revision checks and migration receipts under database_lock; use the
-same pure profile resolver/mutation for Tauri UI and headless execution. Add the
-spatial setting/resolution and managed-env normalization to backend.rs and its
-LaunchPlan tests. Preserve explicit Default separately from inherited in the
-existing GameSettingsModal (it currently converts Default back to inherit on
-load). Package the new native build/source hashes and retain the existing
-installer ownership/readiness gates. Test both origin plans and AMD/NVIDIA DLL
-sets, spatial isolation, explicit zero, conflicts and cleanup retries offline
-before separately authorizing any real Steam/game test.
+The companion WineForge host contains the settings service, GET/PATCH/migrate
+handlers, revision checks, migration receipts and shared launch-plan resolver.
+They are maintained in the launcher project, outside this native source tree.
+
+Offline validation covers both launch origins, profile DLL sets, spatial
+isolation, explicit zero, conflicts and cleanup retries. Preserve explicit
+Default separately from inheritance. Packaging must retain exact payload hashes
+and installer ownership/readiness checks. Offline results do not establish live
+Steam UI behavior, successful game launches or anti-cheat compatibility.

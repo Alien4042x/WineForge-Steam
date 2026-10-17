@@ -11,9 +11,30 @@ SRCS := core/loader.c core/macho.c resolver/anchor.c resolver/aob.c resolver/res
 SRCS += hooks/hook_shortcut.c hooks/hook_icon.c util/peicon.c
 OBJS := $(addprefix $(OUT)/,$(SRCS:.c=.o)) $(OUT)/cJSON.o
 DOBBY_LIBS := $(OUT)/dobby/libdobby.a $(OUT)/dobby/builtin-plugin/SymbolResolver/libdobby_symbol_resolver.a $(OUT)/dobby/builtin-plugin/SymbolResolver/libmacho_ctx_kit.a $(OUT)/dobby/builtin-plugin/SymbolResolver/libshared_cache_ctx_kit.a $(OUT)/dobby/external/osbase/libosbase.a $(OUT)/dobby/external/logging/liblogging.a
-.PHONY: all deps check-deps dobby overlay payload
-all: $(OUT)/wineforge-native-steam.dylib $(OUT)/wineforge-overlay-shim.dylib
+.PHONY: all deps check-deps dobby overlay payload client-check client-check-tests settings-tests
+all: $(OUT)/wineforge-native-steam.dylib $(OUT)/wineforge-overlay-shim.dylib $(OUT)/wineforge-client-check
 overlay: $(OUT)/wineforge-overlay-shim.dylib
+client-check: $(OUT)/wineforge-client-check
+CLIENT_CHECK_SRCS := probe_anchors.c src/dylib/core/macho.c src/dylib/resolver/anchor.c src/dylib/resolver/aob.c src/dylib/resolver/resolver.c src/dylib/resolver/sigdb.c src/dylib/util/log.c src/dylib/util/file.c src/dylib/feats/compat.c src/vendor/cJSON.c
+$(OUT)/wineforge-client-check: $(CLIENT_CHECK_SRCS) $(OUT)/generated/compat_run.h
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -Wl,-dead_strip $(CLIENT_CHECK_SRCS) -o $@
+	codesign -fs - $@
+client-check-tests: $(OUT)/test-client-check
+	$(OUT)/test-client-check
+$(OUT)/test-client-check: tests/client_check.c $(CLIENT_CHECK_SRCS) $(OUT)/generated/compat_run.h
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -Wl,-dead_strip tests/client_check.c $(filter-out probe_anchors.c,$(CLIENT_CHECK_SRCS)) -o $@
+settings-tests: $(OUT)/test-settings-webpatch $(OUT)/settings-component-v1.js
+	$(OUT)/test-settings-webpatch
+	WINEFORGE_SETTINGS_COMPONENT="$(abspath $(OUT)/settings-component-v1.js)" node --test tests/settings_panel.test.mjs
+SETTINGS_TEST_SRCS := tests/settings_webpatch.c src/dylib/util/file.c
+$(OUT)/test-settings-webpatch: $(SETTINGS_TEST_SRCS) src/dylib/feats/webpatch.c src/dylib/hooks/hook_webpatch.c $(wildcard src/dylib/feats/*.h src/dylib/util/*.h) $(OUT)/generated/settings_panel.h
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -Wl,-dead_strip $(SETTINGS_TEST_SRCS) -o $@
+$(OUT)/settings-component-v1.js: $(OUT)/test-settings-webpatch
+	$< --emit-component > $@.tmp
+	mv $@.tmp $@
 deps:
 	./scripts/fetch-deps.sh
 check-deps:

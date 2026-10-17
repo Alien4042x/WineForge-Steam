@@ -2,7 +2,7 @@
 
 Native macOS Steam integration for WineForge. This project contains the Steam client hook, the Metal overlay shim, per-game settings UI and the compatibility-tool entry script.
 
-> **Status: Experimental.** Bugs, incomplete behavior and compatibility issues may occur. Steam client updates may require a new profile or further fixes.
+> **Status: Experimental.** Bugs, incomplete behavior and compatibility issues may occur. Client compatibility is checked automatically. Steam updates that change the required interfaces can still require a profile or hook fix.
 
 The hook and shim build separately from Wine. A compatible host application provides installation, game environments and the authenticated local settings service.
 
@@ -48,7 +48,15 @@ The exporter records file hashes and preserves licenses. It refuses an existing 
 
 The binaries require a compatible host application that implements the compatibility-tool entry and [settings protocol](SETTINGS_CONTRACT_V1.md). This source project contains the native components and build tools. It does not contain the host application's installer or settings service.
 
-The host verifies the exact supported client hash, preserves the original Steam files and installs the owned connection. Installation changes Steam.app and replaces its Valve signature with a local ad-hoc signature. Anti-cheat compatibility is not established by the connection tests.
+The host preserves file hashes as exact installation identities. With the
+automatic compatibility policy it checks the current client using the bundled
+`wineforge-client-check` before installing, rather than requiring its hash to
+match the reference client. The checker maps the client as non-executable data,
+resolves all 16 required functions and validates the compatibility-manager
+layout. Missing, ambiguous or incompatible results reject installation.
+Installation ownership, file integrity and live hook readiness remain separate
+checks. The host application's selected installation mode determines whether
+Steam.app is modified. Anti-cheat compatibility is not established by these checks.
 
 Game environments live under `NotProton/<AppID>` in the selected WineForge storage folder. Each environment contains a private `drive_c/WineForge/NativeSteam` directory for Steam client DLLs. Inside Windows that private directory is `C:\WineForge\NativeSteam`. The environment name remains NotProton.
 
@@ -60,9 +68,32 @@ On 2026-10-14 the original integration passed all 16 client anchors and the stru
 
 That control did not render a game. It does not establish overlay behavior, graphics performance or compatibility with every Steam game.
 
-This repository is a source extraction of that reference. The portable Makefile and payload exporter prepared for this repository have not been used for a new build yet. Previous binary results do not automatically validate future binaries. See [the reference evidence](docs/validation/client-625715ad.json).
+This repository is a source extraction of that reference. The passive checker
+target and its selector-rebase controls have been built and tested. The portable
+hook/overlay build and full payload exporter have not been used for a new build
+yet. Previous binary results do not automatically validate future binaries.
+See [the reference evidence](docs/validation/client-625715ad.json).
 
-Only exact validated client versions are supported. A Steam update can require a new profile and connected verification.
+The profile's reference client hash records provenance. Compatible client
+updates do not require a new hash allowlist entry. The automatic check does not
+transfer historical connected-client or game acceptance to a new client.
+
+Build and test the passive checker separately, without fetching Dobby or
+building/installing a Steam hook:
+
+```sh
+make client-check client-check-tests
+build/wineforge-client-check --json /path/to/steamclient.dylib profiles/625715ada315323351ada75a077142c15d4b742be2db9e63ec354828082ab194/client-profile.json
+```
+
+Run the settings panel and migration tests without Steam or Wine:
+
+```sh
+make settings-tests
+```
+
+This target generates the embedded native component required by the JavaScript
+tests. It does not fetch Dobby or install a hook.
 
 ## Sources and licenses
 

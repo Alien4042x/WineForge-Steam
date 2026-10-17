@@ -180,7 +180,8 @@ test('failed Steam cleanup preserves the committed profile and reports pending c
 });
 
 test('actual C-expanded Steam component wires AppID and typed settings requests', async () => {
-  const native = fs.readFileSync(new URL('../build/settings-component-v1.js', import.meta.url), 'utf8');
+  const componentPath = process.env.WINEFORGE_SETTINGS_COMPONENT || new URL('../build/settings-component-v1.js', import.meta.url);
+  const native = fs.readFileSync(componentPath, 'utf8');
   const calls = [], writes = [];
   const context = vm.createContext({ fetch: async (url, options) => { calls.push({ url, options }); return mockResponse(baseSnapshot()); },
     AbortController, setTimeout, clearTimeout,
