@@ -34,6 +34,12 @@ Build only the overlay shim with:
 make overlay
 ```
 
+The shim includes NotProton's pipeline ownership fix
+[`f5a871a`](https://github.com/NotProtonNot/NotProton/commit/f5a871a329bba165cf41b3f5e7b105b3c0cab7ba),
+with WineForge's process/backend and late-install gates retained. Run its
+ownership, completion, discard and rebuild regression tests without Steam or a
+GPU using `make overlay-tests`. The test target runs arm64 and x86_64 controls.
+
 Outputs are written to `build/`. The local build uses ad-hoc signing. Building does not install a hook, change Steam.app or start Steam or a game.
 
 Create a candidate integration payload with:
@@ -58,6 +64,13 @@ Installation ownership, file integrity and live hook readiness remain separate
 checks. The host application's selected installation mode determines whether
 Steam.app is modified. Anti-cheat compatibility is not established by these checks.
 
+The matching host update must accept Steam's trusted
+`steamloader.dylib:gameoverlayrenderer.dylib` request, retain approved 64-bit
+loader ordering and insert the packaged shim first. It also stages the official
+install-script helpers under the actual client `legacycompat` directory with
+ownership and rollback. These host-side fixes are maintained in the launcher.
+Updating this repository alone does not update an installed launcher.
+
 Game environments live under `NotProton/<AppID>` in the selected WineForge storage folder. Each environment contains a private `drive_c/WineForge/NativeSteam` directory for Steam client DLLs. Inside Windows that private directory is `C:\WineForge\NativeSteam`. The environment name remains NotProton.
 
 ## Validation status
@@ -68,11 +81,19 @@ On 2026-10-14 the original integration passed all 16 client anchors and the stru
 
 That control did not render a game. It does not establish overlay behavior, graphics performance or compatibility with every Steam game.
 
-This repository is a source extraction of that reference. The passive checker
-target and its selector-rebase controls have been built and tested. The portable
-hook/overlay build and full payload exporter have not been used for a new build
-yet. Previous binary results do not automatically validate future binaries.
-See [the reference evidence](docs/validation/client-625715ad.json).
+The historical extraction and checker reference are retained in
+[client validation](docs/validation/client-625715ad.json).
+
+On 2026-10-19 the rebuilt overlay shim passed ownership tests on arm64 and
+x86_64. A maintainer then confirmed a visible Steam overlay in Backrooms:
+Escape Together using the matching WineForge launcher update. A successful
+process mapping read independently confirmed the shim, Steam renderer and
+Core driver in the Shipping process. See the scoped
+[overlay validation record](docs/validation/overlay-20261019.json).
+
+This game result does not establish fullscreen cursor/Dock behavior or validate
+every game. Fresh candidate exports keep connected and game readiness false
+until their exact binaries are tested.
 
 The profile's reference client hash records provenance. Compatible client
 updates do not require a new hash allowlist entry. The automatic check does not

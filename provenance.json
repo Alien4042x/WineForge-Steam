@@ -61,11 +61,23 @@
     "src/dylib/util/peicon.h": "23b7b2320cd38b0e7631338fdc97c17286fa771e85a19ebe0de9d2950abc5403",
     "src/dylib/util/ptr.h": "ca73f28308dc13e8d9fd7973d66102d9cd61f85567ea36f3b683911ce9015901",
     "src/dylib/version.h": "bc754a978899e206845f37392282b3460626ae8c69bd472a7a54fd56f83fd1de",
-    "src/overlay/overlay_shim.m": "6a2a6c21d09e8859208c5d6c299f6c7a8740e028eb0e4bdf0ef9f97d643e8989",
+    "src/overlay/overlay_shim.m": "e00defd3531f158f3d21d93ea9dcea9811d09ef3c21e67fde15813781d1a9688",
     "src/vendor/cJSON.c": "607e756460fa0de37d20a7a9181f2de29c97bfb7ce5a0e6c2f548243836cd852",
-    "src/vendor/cJSON.h": "25b0145150d500498e4d209cec69c18c42cf818bffcc54690be3b895a2a16dee"
+    "src/vendor/cJSON.h": "25b0145150d500498e4d209cec69c18c42cf818bffcc54690be3b895a2a16dee",
+    "src/overlay/tests/ownership.m": "8348c20c56c9eda15cd4be6ebac4802c3f5b9a956bf99eb2f38fe3a494ed1113",
+    "src/overlay/tests/check.h": "08e16daeb52bed5fc65ef81cb2416a01f9ee89a7f0471560ba1beb4075f216f1"
   },
-  "originalSourceFilesCopiedExactly": true,
-  "extractedBuildExecuted": false,
-  "installedAppChanged": false
+  "overlayPipelineOwnershipFix": {
+    "repository": "https://github.com/NotProtonNot/NotProton",
+    "commit": "f5a871a329bba165cf41b3f5e7b105b3c0cab7ba",
+    "testsCommit": "279167917dc6d0a84fb0305b0c88b11603c4bf92",
+    "scope": "Overlay pipeline ownership only. Existing WineForge activation and late-install gates retained."
+  },
+  "initialExtraction": {
+    "originalSourceFilesCopiedExactly": true,
+    "extractedBuildExecuted": false,
+    "installedAppChanged": false,
+    "scope": "Historical extraction snapshot, before the subsequent overlay build and validation."
+  },
+  "overlayValidationEvidence": "docs/validation/overlay-20261019.json"
 }

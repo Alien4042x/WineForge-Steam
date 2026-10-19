@@ -72,6 +72,14 @@ manifest = {
         'notprotonCommit': provenance['notproton']['commit'],
         'dobbyCommit': provenance['dobby']['commit'],
         'provenanceSHA256': sha(root / 'provenance.json'),
+        'overlay': {
+            'notprotonCommit': provenance['notproton']['commit'],
+            'source': 'src/overlay/overlay_shim.m',
+            'sourceSha256': sha(root / 'src/overlay/overlay_shim.m'),
+            'pipelineOwnershipFix': provenance['overlayPipelineOwnershipFix'],
+            'adaptations': ['Steam Play process/backend gate', 'idempotent late installation'],
+            'build': 'make overlay, universal arm64/x86_64, macOS 15.0',
+        },
     },
 }
 output.mkdir(parents=True)

@@ -2,6 +2,12 @@
 
 The native hook, overlay shim and embedded integration code derive from [NotProton](https://github.com/NotProtonNot/NotProton) v1.1.0 at commit [05a27874798ffbffb8e64a37595bde6f16d5320a](https://github.com/NotProtonNot/NotProton/commit/05a27874798ffbffb8e64a37595bde6f16d5320a). The project retains its GPLv3 license in [LICENSE](LICENSE), original source notices and [upstream licensing notice](licenses/NotProton-NOTICE).
 
+The overlay shim also includes the upstream pipeline ownership fix from commit
+[f5a871a329bba165cf41b3f5e7b105b3c0cab7ba](https://github.com/NotProtonNot/NotProton/commit/f5a871a329bba165cf41b3f5e7b105b3c0cab7ba).
+Its ownership regression tests come from `overlay-shim/tests` at upstream
+commit `279167917dc6d0a84fb0305b0c88b11603c4bf92`. They retain the project's
+original GPLv3 license. WineForge's process/backend and late-install gates remain.
+
 Dobby is a separate pinned build dependency at commit `5dfc8546954ce3b3198132ab13fddb89ee92cdd7`. Its Apache 2.0 license is retained in [licenses/Dobby-LICENSE](licenses/Dobby-LICENSE). The dependency script fetches that exact revision.
 
 The vendored cJSON source retains its MIT copyright notice. Its license is also copied to [licenses/cJSON-LICENSE](licenses/cJSON-LICENSE).

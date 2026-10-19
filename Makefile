@@ -11,7 +11,7 @@ SRCS := core/loader.c core/macho.c resolver/anchor.c resolver/aob.c resolver/res
 SRCS += hooks/hook_shortcut.c hooks/hook_icon.c util/peicon.c
 OBJS := $(addprefix $(OUT)/,$(SRCS:.c=.o)) $(OUT)/cJSON.o
 DOBBY_LIBS := $(OUT)/dobby/libdobby.a $(OUT)/dobby/builtin-plugin/SymbolResolver/libdobby_symbol_resolver.a $(OUT)/dobby/builtin-plugin/SymbolResolver/libmacho_ctx_kit.a $(OUT)/dobby/builtin-plugin/SymbolResolver/libshared_cache_ctx_kit.a $(OUT)/dobby/external/osbase/libosbase.a $(OUT)/dobby/external/logging/liblogging.a
-.PHONY: all deps check-deps dobby overlay payload client-check client-check-tests settings-tests
+.PHONY: all deps check-deps dobby overlay payload client-check client-check-tests settings-tests overlay-tests
 all: $(OUT)/wineforge-native-steam.dylib $(OUT)/wineforge-overlay-shim.dylib $(OUT)/wineforge-client-check
 overlay: $(OUT)/wineforge-overlay-shim.dylib
 client-check: $(OUT)/wineforge-client-check
@@ -72,7 +72,7 @@ $(OUT)/wineforge-native-steam.dylib: $(OUT)/wineforge-native-steam.arm64.dylib $
 # WineForge-Internal: steam-play/focused-overlay-shim-build-v1.
 $(OUT)/wineforge-overlay-shim.%.dylib: src/overlay/overlay_shim.m
 	@mkdir -p $(dir $@)
-	$(CC) -arch $* -mmacosx-version-min=$(MIN_VER) -dynamiclib -O2 -Wall -Wextra -Wno-deprecated-declarations -install_name @rpath/wineforge-overlay-shim.dylib -o $@ $< -framework Metal -framework QuartzCore -framework CoreGraphics -framework CoreFoundation
+	$(CC) -arch $* -mmacosx-version-min=$(MIN_VER) -dynamiclib -O2 -fblocks -fno-objc-arc -Wall -Wextra -Wno-deprecated-declarations -install_name @rpath/wineforge-overlay-shim.dylib -o $@ $< -framework Foundation -framework Metal -framework QuartzCore -framework CoreGraphics -framework CoreFoundation
 $(OUT)/wineforge-overlay-shim.dylib: $(OUT)/wineforge-overlay-shim.arm64.dylib $(OUT)/wineforge-overlay-shim.x86_64.dylib
 	lipo -create $^ -output $@
 	codesign -fs - $@
@@ -81,3 +81,11 @@ $(OUT)/wineforge-overlay-shim.dylib: $(OUT)/wineforge-overlay-shim.arm64.dylib $
 # WineForge-Internal: native-steam/standalone-candidate-payload-v1.
 payload: all
 	python3 scripts/package-payload.py
+
+# Upstream ownership regression uses mock Metal objects, no Steam/game/GPU.
+overlay-tests: $(OUT)/overlay-ownership.arm64 $(OUT)/overlay-ownership.x86_64
+	$(OUT)/overlay-ownership.arm64
+	$(OUT)/overlay-ownership.x86_64
+$(OUT)/overlay-ownership.%: src/overlay/tests/ownership.m src/overlay/tests/check.h src/overlay/overlay_shim.m
+	@mkdir -p $(dir $@)
+	$(CC) -arch $* -mmacosx-version-min=$(MIN_VER) -O2 -fblocks -fno-objc-arc -Wall -Wextra -Wno-deprecated-declarations -o $@ $< -framework Foundation -framework Metal -framework QuartzCore -framework AppKit

@@ -1,0 +1,62 @@
+{
+  "date": "2026-10-19",
+  "scope": "One maintainer Backrooms overlay test. No claim of compatibility with every game or future binary.",
+  "game": {
+    "name": "Backrooms: Escape Together",
+    "appID": 2141730,
+    "process": "BETGameSteam-Win64-Shipping.exe"
+  },
+  "runtime": {
+    "wine": "11.20",
+    "wineForge": "0.6.0.7",
+    "graphicsBackend": "D3DMetal"
+  },
+  "nativeSource": {
+    "notprotonBase": "05a27874798ffbffb8e64a37595bde6f16d5320a",
+    "pipelineOwnershipFix": "f5a871a329bba165cf41b3f5e7b105b3c0cab7ba",
+    "shimSourceSHA256": "e00defd3531f158f3d21d93ea9dcea9811d09ef3c21e67fde15813781d1a9688"
+  },
+  "ownershipTests": {
+    "command": "make overlay-tests",
+    "architectures": [
+      "arm64",
+      "x86_64"
+    ],
+    "scenarioGroupsPerArchitecture": 6,
+    "passed": true,
+    "baselineLeakReproduced": true,
+    "gpuRequired": false
+  },
+  "gameObservation": {
+    "mappingReadSucceeded": true,
+    "mappingCommandExit": 0,
+    "mappedComponents": [
+      "wineforge-overlay-shim.dylib",
+      "gameoverlayrenderer.dylib",
+      "winemac.so"
+    ],
+    "userConfirmedVisibleOverlay": true,
+    "configuredEnvironmentObserved": false,
+    "selectedEnvironment": {},
+    "signedComponentSHA256": {
+      "main": "96648421ceed460a8b29fa1939d4195081f1d5e352873785a46e2fb5c8761be9",
+      "fullscreen": "b6ae7b4b88ac94c0473c421985a19f1da2525df75ba0ab488fd82ec20abf986c",
+      "overlayShim": "1a2cadd426c87ad5e9a82d5797cf62004a921b4738ca37f0808e42f10124842d",
+      "rootSeal": "ccbffb85d7295b816a5e9fc4c09209e0d51c6d74e35fb1183567d4aa2e100df3"
+    }
+  },
+  "retainedEvidenceSHA256": {
+    "summary.json": "d8d5c6fd9331dbcfc75f7eaf8a6da4d7bc97cee4e3f93df87f928d2870f190d3",
+    "capture.json": "885bde2c164f4708eb4a4b6ee0e12910507f6cc2260f3652a4276fa55e34f60e",
+    "mapping.stdout": "0b830c5328836eab61a9bb49981c5f3057a3051bd58ac8ed8a9dace7dca402d3"
+  },
+  "hostRequirements": [
+    "Matching launcher update that accepts the trusted native steamloader.dylib and gameoverlayrenderer.dylib request, preserves approved 64-bit ordering and inserts the shim first.",
+    "Official install-script helpers staged in the actual client legacycompat directory by the host installer with ownership and rollback."
+  ],
+  "limits": [
+    "Only the overlay behavior was confirmed here. Fullscreen cursor and Dock behavior remain a separate investigation.",
+    "The host launcher fixes are maintained separately from this native source repository.",
+    "Fresh candidate exports retain unverified connected/game readiness flags until that exact binary combination is tested."
+  ]
+}
