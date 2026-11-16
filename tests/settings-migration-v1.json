@@ -9,7 +9,7 @@
     "after": " %command% --arg=\"a b\""
   },
   {
-    "name": "WFUSync explicit zero",
+    "name": "legacy WFUSync explicit zero imports USync off",
     "before": "WINEWFUSYNC=0 %command%",
     "safe": true,
     "changes": {
@@ -18,12 +18,50 @@
     "after": " %command%"
   },
   {
-    "name": "old MSync is not WFUSync",
+    "name": "USync explicit one",
+    "before": "WINEUSYNC=1 %command%",
+    "safe": true,
+    "changes": { "wfusync": true },
+    "after": " %command%"
+  },
+  {
+    "name": "matching old and new USync assignments",
+    "before": "WINEWFUSYNC=0 WINEUSYNC=0 %command%",
+    "safe": true,
+    "changes": { "wfusync": false },
+    "after": "  %command%"
+  },
+  {
+    "name": "conflicting old and new USync assignments stay intact",
+    "before": "WINEWFUSYNC=0 WINEUSYNC=1 %command%",
+    "safe": false,
+    "changes": {},
+    "after": "WINEWFUSYNC=0 WINEUSYNC=1 %command%",
+    "warning": "Conflicting USync"
+  },
+  {
+    "name": "unknown USync value stays intact",
+    "before": "WINEUSYNC=maybe %command%",
+    "safe": false,
+    "changes": {},
+    "after": "WINEUSYNC=maybe %command%",
+    "warning": "unknown value"
+  },
+  {
+    "name": "invalid old assignment cannot be hidden by new USync",
+    "before": "WINEWFUSYNC=maybe WINEUSYNC=1 %command%",
+    "safe": false,
+    "changes": {},
+    "after": "WINEWFUSYNC=maybe WINEUSYNC=1 %command%",
+    "warning": "unknown value"
+  },
+  {
+    "name": "old MSync is not USync",
     "before": "WINEMSYNC=1 %command%",
     "safe": true,
     "changes": {},
     "after": "WINEMSYNC=1 %command%",
-    "warning": "MSync is not WFUSync"
+    "warning": "MSync is not USync"
   },
   {
     "name": "DXMT NVIDIA is one profile",

@@ -211,6 +211,16 @@ static const np_gate_t g_gates_selecttool[] = {
     // Settings page Compatibility entry.
     { "Compatibility:{visible:" NP_C1 "&&(0," NP_C2 ".CI)(),title:",
       "Compatibility:{visible:" NP_C1 "&&true,title:", 1 },
+    // Only the per-game inherited row is renamed. The global default picker
+    // and the explicit WineForge tool entry keep their Steam semantics.
+    { "function g(A){const{label:b,nAppId:f}=A,",
+      "function g(A){const{label:b,nAppId:f}=A,", 1 },
+    { "const E=d(D.data.default_tool_identifier,D.data);return E?y.unshift({data:\"\",label:(0,i.we)"
+      "(\"#Settings_SteamPlay_DefaultToolEntry\",E)})",
+      "const E=d(D.data.default_tool_identifier,D.data);return E?y.unshift({data:\"\",label:"
+      "f&&D.data.default_tool_identifier===\"" NP_FALLBACK_TOOL "\"?"
+      "(0,i.we)(\"#Settings_RemotePlay_HDRMode_Auto\")+\" (WineForge)\":"
+      "(0,i.we)(\"#Settings_SteamPlay_DefaultToolEntry\",E)})", 1 },
     { "function " NP_C1 "(" NP_C2 "){return(0," NP_C3 ".jsxs)(" NP_C4 ".XY,{label:(0," NP_C5 ".we)"
       "(\"#Settings_SteamPlay_SteamPlay\"),children:[(0," NP_C3 ".jsx)(" NP_C6 ",{details:" NP_C2 ".details}),"
       "(0," NP_C3 ".jsx)(" NP_C7 ".G,{setting:\"compat_show_all_tools\",label:(0," NP_C5 ".we)"

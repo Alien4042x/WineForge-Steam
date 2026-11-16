@@ -50,7 +50,7 @@ test('mount reads canonical settings once and never auto-writes options', async 
   assert.deepEqual(writes, []);
   assert.deepEqual(control(element, 'backend').children.map(child => child.textContent), ['Automatic', 'D3DMetal', 'DXMT']);
   assert.deepEqual(control(element, 'upscaling').children.filter(child => !child.hidden).map(child => child.textContent), ['Use WineForge default', 'AMD FSR', 'NVIDIA MetalFX']);
-  assert.ok(element.textContent.includes('WFUSync'));
+  assert.ok(element.textContent.includes('USync'));
   assert.equal(control(element, 'dxmtSpatial').disabled, true);
 });
 
@@ -111,6 +111,49 @@ test('409 refreshes without retrying the stale write or changing Steam options',
   assert.ok(element.textContent.includes('changed elsewhere'));
 });
 
+test('a busy initial read retries once and unlocks the current profile', async () => {
+  const methods = [], element = root();
+  const panel = api(async (url, options) => {
+    methods.push(options.method);
+    return methods.length === 1 ? mockResponse({}, 503) : mockResponse(baseSnapshot());
+  });
+  panel.mount(element, { appID: '730', getLaunchOptions: () => '', setLaunchOptions: () => assert.fail('No options write') });
+  await flush();
+  assert.deepEqual(methods, ['GET', 'GET']);
+  assert.equal(control(element, 'wfusync').disabled, false);
+  assert.equal(element._wineforgeSettingsV1.current.revision, 'c'.repeat(64));
+});
+
+test('an expired connection stays disabled and reports the HTTP cause', async () => {
+  const methods = [], element = root();
+  const panel = api(async (url, options) => { methods.push(options.method); return mockResponse({}, 401); });
+  panel.mount(element, { appID: '730', getLaunchOptions: () => '', setLaunchOptions: () => assert.fail('No options write') });
+  await flush();
+  assert.deepEqual(methods, ['GET']);
+  assert.equal(control(element, 'wfusync').disabled, true);
+  assert.ok(element.textContent.includes('connection expired'));
+});
+
+test('failed mutation is never replayed and a read reconciles its outcome', async () => {
+  const methods = [], element = root(), current = baseSnapshot();
+  const panel = api(async (url, options) => {
+    methods.push(options.method);
+    if (options.method === 'PATCH') {
+      current.overrides.wfusync = false;
+      current.effective.wfusync = false;
+      current.revision = 'd'.repeat(64);
+      return mockResponse({}, 503);
+    }
+    return mockResponse(current);
+  });
+  panel.mount(element, { appID: '730', getLaunchOptions: () => '', setLaunchOptions: () => assert.fail('No options write') });
+  await flush();
+  const sync = control(element, 'wfusync'); sync.value = 'off'; sync.fire('change'); await flush();
+  assert.deepEqual(methods, ['GET', 'PATCH', 'GET']);
+  assert.equal(element._wineforgeSettingsV1.current.revision, 'd'.repeat(64));
+  assert.equal(sync.value, 'off');
+});
+
 test('missing descriptor makes no request and disables setting controls', async () => {
   const element = root(); api(() => assert.fail('No request without service'), null).mount(element,
     { appID: '730', getLaunchOptions: () => '', setLaunchOptions: () => assert.fail('No write') }); await flush();
@@ -165,7 +208,7 @@ test('failed import never clears launch options', async () => {
   const element = root(); const panel = api(async (url, request) => mockResponse(request.method === 'POST' ? {} : baseSnapshot(), request.method === 'POST' ? 422 : 200));
   panel.mount(element, { appID: '730', getLaunchOptions: () => 'WINEWFUSYNC=0 %command%', setLaunchOptions: () => assert.fail('Must preserve options') }); await flush();
   button(element, 'Import recognized legacy settings').fire('click'); await flush();
-  assert.ok(element.textContent.includes('did not accept'));
+  assert.ok(element.textContent.includes('rejected this profile combination'));
 });
 
 test('failed Steam cleanup preserves the committed profile and reports pending cleanup', async () => {

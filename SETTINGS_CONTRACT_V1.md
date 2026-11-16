@@ -34,9 +34,20 @@ foreign Origin, non-JSON input, oversized bodies, invalid AppIDs and unknown
 fields. CORS permits only the observed, supported Steam UI origin and required
 methods/headers. CSP/CORS in actual Steam are an untested connected gate.
 
+In the current Steam compatibility selector, the per-game inherited choice is
+shown as `Automatic (WineForge)` when WineForge is the global Steam Play tool.
+It retains the empty inherited tool ID. The separate explicit `WineForge` choice
+retains its tool ID, and the global Steam Play selector keeps its own labels.
+The displayed word `Automatic` uses Steam's localized UI text. This label
+change does not alter a game's graphics or synchronization profile.
+
 Requests use `Authorization: Bearer <token>`, JSON and no cookies. No network
 access occurs merely by loading the settings script. The panel refuses writes
-while a GET/PATCH is outstanding and has a bounded request timeout.
+while a GET/PATCH is outstanding. Requests time out after 15 seconds. A failed
+GET may be retried once for a busy service or transient transport error. A
+PATCH is never retried because it may have committed before a timeout. After
+any failed PATCH the panel reads the canonical profile again and shows the
+specific HTTP failure status without exposing the connection token.
 
 `GET /v1/games/<AppID>/settings` returns:
 
@@ -66,7 +77,7 @@ GET does not create a bottle, install Steam, or change a runtime.
 | --- | --- | --- |
 | backend | inherit, d3dmetal, dxmt | Automatic uses the existing per-game/global Steam Play/bottle resolver. New default D3DMetal |
 | upscaling | inherit, default, amd, nvidia | Panel offers WineForge inheritance, AMD FSR and NVIDIA MetalFX. Existing default overrides remain explicit neutral data |
-| wfusync | null, true, false | null uses the existing resolver, including preserved explicit advanced `WINEWFUSYNC=0`. New environments default on |
+| wfusync | null, true, false | Protocol v1 retains this field name for saved profile compatibility. It now controls USync through `WINEUSYNC=1/0`. Null uses the existing resolver, including saved explicit `WINEWFUSYNC=0`. New environments default on |
 | metalHud | null, true, false | null uses the existing resolver. Explicit off emits `MTL_HUD_ENABLED=0` |
 | dxmtSpatial | inherit, off, 1.5, 1.72, 2.0, 3.0 (strings) | Independent of NVIDIA profile. Saved while D3DMetal is selected, emitted only for DXMT |
 
@@ -74,7 +85,8 @@ Game override precedes inherited defaults. Keep current advanced-env inheritance
 for untouched fields. An explicit panel on/off change normalizes conflicting
 per-game environment entries for that same managed field before setting the
 dedicated value, so an old game `WINEWFUSYNC=0` does not silently negate a new
-On selection. `null` removes only the dedicated override, retaining advanced
+On selection. A new `WINEUSYNC` override takes precedence over a saved old key.
+The child process receives only `WINEUSYNC`. `null` removes only the dedicated override, retaining advanced
 inheritance. Do not silently migrate unrelated game variables.
 
 The panel has one visible default, `Use WineForge default` (`inherit`). The
@@ -117,7 +129,8 @@ sweep of Steam launch options takes place.
 The panel previews literal assignments before one standalone `%command%`.
 For example, `CX_GRAPHICS_BACKEND=dxmt %command%` can import the DXMT backend.
 `WINEMSYNC` is an old MSync setting. It is preserved and never converted to
-WFUSync. Supported `WINEWFUSYNC=0/1` values import the WFUSync setting.
+USync. Supported `WINEWFUSYNC=0/1` and `WINEUSYNC=0/1` values import the USync setting.
+Conflicting old and new values remain untouched for manual review.
 The exact supported inputs and conservative rewrites are recorded in the shared
 [migration fixtures](tests/settings-migration-v1.json). Complex commands,
 unknown values, ambiguous combinations and custom spatial factors are preserved.

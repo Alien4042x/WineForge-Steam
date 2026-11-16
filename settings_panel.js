@@ -6,7 +6,7 @@
   'use strict';
   const HEX = /^[0-9a-f]{64}$/;
   const SPATIAL = ['off', '1.5', '1.72', '2.0', '3.0'];
-  const MANAGED = new Set(['CX_GRAPHICS_BACKEND', 'WINEMSYNC', 'WINEWFUSYNC',
+  const MANAGED = new Set(['CX_GRAPHICS_BACKEND', 'WINEMSYNC', 'WINEUSYNC', 'WINEWFUSYNC',
     'MTL_HUD_ENABLED', 'D3DM_ENABLE_METALFX', 'DXMT_ENABLE_NVEXT',
     'DXMT_METALFX_SPATIAL_SWAPCHAIN', 'DXMT_CONFIG']);
   const appID = value => /^[1-9][0-9]*$/.test(String(value)) && Number(value) <= 4294967295;
@@ -70,13 +70,23 @@
         use(backend.key, 'backend', !backend.value || backend.value === 'automatic' ? 'inherit' : backend.value);
       else warnings.push('Unsupported legacy backend was preserved.');
     }
-    for (const [key, field] of [['WINEWFUSYNC', 'wfusync'], ['MTL_HUD_ENABLED', 'metalHud']]) {
-      const entry = last(key);
-      if (!entry) continue;
-      if (['0', '1'].includes(entry.value)) use(key, field, entry.value === '1');
-      else warnings.push(`${key} has an unknown value and was preserved.`);
+    const oldSync = last('WINEWFUSYNC'), newSync = last('WINEUSYNC');
+    if ((oldSync && !['0', '1'].includes(oldSync.value)) ||
+        (newSync && !['0', '1'].includes(newSync.value)))
+      return fail('USync has an unknown value and was preserved.');
+    if (oldSync && newSync && oldSync.value !== newSync.value)
+      return fail('Conflicting USync settings were preserved.');
+    if (newSync || oldSync) {
+      const entry = newSync || oldSync;
+      use(entry.key, 'wfusync', entry.value === '1');
+      if (oldSync) consumed.add(oldSync.key);
     }
-    if (last('WINEMSYNC')) warnings.push('MSync is not WFUSync. WINEMSYNC was preserved; choose WFUSync explicitly.');
+    const hud = last('MTL_HUD_ENABLED');
+    if (hud) {
+      if (['0', '1'].includes(hud.value)) use(hud.key, 'metalHud', hud.value === '1');
+      else warnings.push('MTL_HUD_ENABLED has an unknown value and was preserved.');
+    }
+    if (last('WINEMSYNC')) warnings.push('MSync is not USync. WINEMSYNC was preserved; choose USync explicitly.');
     const d3d = last('D3DM_ENABLE_METALFX'), dxmt = last('DXMT_ENABLE_NVEXT');
     if (d3d || dxmt) {
       if (d3d?.value === '1' && !dxmt && backend?.value === 'd3dmetal')
@@ -137,25 +147,43 @@
 
   async function request(id, method = 'GET', data, revision, suffix = '') {
     if (!configured || !appID(id)) throw new Error('Open WineForge and restart Steam to connect game settings.');
-    const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 5000);
-    try {
-      const response = await fetch(`${config.baseURL}/games/${id}/settings${suffix}`, {
-        method, signal: controller.signal, credentials: 'omit', cache: 'no-store',
-        headers: { Authorization: `Bearer ${config.token}`, ...(data ? { 'Content-Type': 'application/json' } : {}),
-          ...(revision ? { 'If-Match': revision } : {}) },
-        ...(data ? { body: JSON.stringify(data) } : {}),
-      });
-      if (!response.ok) {
-        const error = new Error(response.status === 409 ? 'Profile changed elsewhere. Reloaded; choose the setting again.'
-          : 'WineForge did not accept this change. Check the app connection and profile.');
-        error.conflict = response.status === 409;
+    // A cold launch or prefix preparation can hold the database lock longer
+    // than the old five-second timeout. Only reads may be retried: a timed-out
+    // mutation may still have committed after the browser stopped waiting.
+    for (let attempt = 0; attempt < (method === 'GET' ? 2 : 1); attempt++) {
+      const controller = new AbortController(), timeout = setTimeout(() => controller.abort(), 15000);
+      try {
+        const response = await fetch(`${config.baseURL}/games/${id}/settings${suffix}`, {
+          method, signal: controller.signal, credentials: 'omit', cache: 'no-store',
+          headers: { Authorization: `Bearer ${config.token}`, ...(data ? { 'Content-Type': 'application/json' } : {}),
+            ...(revision ? { 'If-Match': revision } : {}) },
+          ...(data ? { body: JSON.stringify(data) } : {}),
+        });
+        if (!response.ok) {
+          const messages = {
+            401: 'WineForge settings connection expired. Restart Steam through WineForge.',
+            403: 'WineForge settings connection changed. Restart Steam through WineForge.',
+            409: 'Profile changed elsewhere. Reloaded; choose the setting again.',
+            422: 'WineForge rejected this profile combination. Reloaded the current settings.',
+            503: 'WineForge is busy preparing game settings. Reload the profile shortly.',
+          };
+          const error = new Error(messages[response.status] || `WineForge settings request failed (HTTP ${response.status}).`);
+          error.status = response.status;
+          error.conflict = response.status === 409;
+          throw error;
+        }
+        // The local service must also impose the documented body-size limit.
+        const text = await response.text();
+        if (text.length > 32768) throw new Error('WineForge response is too large.');
+        return snapshot(JSON.parse(text), id);
+      } catch (error) {
+        if (method === 'GET' && attempt === 0 &&
+          (error.status === 503 || error.name === 'AbortError' || error.name === 'TypeError')) continue;
+        if (error.name === 'AbortError') throw new Error('WineForge settings timed out. Reload the profile.');
+        if (error.name === 'TypeError') throw new Error('Could not reach WineForge settings service. Reload the profile.');
         throw error;
-      }
-      // The local service must also impose the documented body-size limit.
-      const text = await response.text();
-      if (text.length > 32768) throw new Error('WineForge response is too large.');
-      return snapshot(JSON.parse(text), id);
-    } finally { clearTimeout(timeout); }
+      } finally { clearTimeout(timeout); }
+    }
   }
 
   function mount(root, input) {
@@ -196,7 +224,7 @@
     }
     select('backend', 'Graphics backend', [['inherit', 'Automatic'], ['d3dmetal', 'D3DMetal'], ['dxmt', 'DXMT']]);
     select('upscaling', 'Upscaling profile', [['inherit', 'Use WineForge default'], ['amd', 'AMD FSR'], ['nvidia', 'NVIDIA MetalFX']]);
-    select('wfusync', 'WFUSync', [['inherit', 'Automatic'], ['on', 'On'], ['off', 'Off']]);
+    select('wfusync', 'USync', [['inherit', 'Automatic'], ['on', 'On'], ['off', 'Off']]);
     select('metalHud', 'Metal HUD (FPS)', [['inherit', 'Use WineForge default'], ['on', 'On'], ['off', 'Off']]);
     select('dxmtSpatial', 'DXMT MetalFX spatial upscaler', [['inherit', 'Use WineForge default'], ['off', 'Off'], ['1.5', '1.5x'], ['1.72', '1.72x'], ['2.0', '2x'], ['3.0', '3x']]);
     const effective = node('p');
@@ -219,7 +247,7 @@
       }
       if (current) {
         const e = current.effective;
-        effective.textContent = `Effective: ${e.backend === 'dxmt' ? 'DXMT' : 'D3DMetal'} \u00b7 ${e.upscaling} \u00b7 WFUSync ${e.wfusync ? 'on' : 'off'} \u00b7 HUD ${e.metalHud ? 'on' : 'off'}`;
+        effective.textContent = `Effective: ${e.backend === 'dxmt' ? 'DXMT' : 'D3DMetal'} \u00b7 ${e.upscaling} \u00b7 USync ${e.wfusync ? 'on' : 'off'} \u00b7 HUD ${e.metalHud ? 'on' : 'off'}`;
       }
       const preview = previewLegacyLaunchOptions(state.input.getLaunchOptions());
       legacy.textContent = preview.warnings.join(' ');
@@ -236,11 +264,13 @@
     async function save(changes) {
       if (state.busy || !state.current || state.disposed) return;
       state.busy = true; paint('Saving WineForge profile\u2026');
-      let message, conflict = false;
+      let message, failed = false;
       try { state.current = await request(state.appID, 'PATCH', { protocolVersion: 1, appID: state.appID, changes }, state.current.revision); }
-      catch (error) { message = error.message; conflict = error.conflict; }
+      catch (error) { message = error.message; failed = true; }
       finally { state.busy = false; paint(message); }
-      if (conflict) await load(message);
+      // A failed or timed-out write may have committed. Read the canonical
+      // profile again, without replaying the mutation.
+      if (failed) await load(message);
     }
     async function importLegacy() {
       if (state.busy || !state.current || state.disposed) return;

@@ -12,7 +12,7 @@
   },
   "sourceTreeSHA256": {
     "compat_run.sh": "b0cc9ef8a3ee019d0d1de53752ea071061d9cb35b8930978cd78e9a573298d9c",
-    "settings_panel.js": "d424de3984374acef3cf047959fb74ca560bcca4fda8d4c7965bb30915adf7ff",
+    "settings_panel.js": "a3382dce6eab602f8e56600a6394adb94febfa5d04502031cc8e40bdac881ebc",
     "src/LICENSE": "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986",
     "src/NOTICE": "6af9f5747de31e03f8fcd430c3863bc060325a01dd708d9ec11d15baa37d3cde",
     "src/dylib/core/loader.c": "c05f6503caf7c5944ed4f9772253b8f295de57f4e7ea7d040bfb69969ca54a5f",
@@ -28,7 +28,7 @@
     "src/dylib/feats/input_access.h": "766875bd4fcc7359466f0005684c1e3fe6e7ebf45553b8e48bf28159f04f583f",
     "src/dylib/feats/settings.c": "f8f6d41dec3fc821d8a1c2224f135bbbacaabd9a746969829a821385b3b3e231",
     "src/dylib/feats/settings.h": "e85ec369d1283fd74d50e4c03e77ad5459728f892ecdfbcfda8411898406916e",
-    "src/dylib/feats/webpatch.c": "0a677495c114abbf8a83ec08b1cf2fd446df6a554ee28c6a3f35881a6585c637",
+    "src/dylib/feats/webpatch.c": "48beabe46afe73f4833d3318d3564f93fe3dc0f4cb2660bc89c834e9d302b85d",
     "src/dylib/feats/webpatch.h": "4016aee1499de60f280b712f4003ed2bd7d4ad730f659d9511ef23cf4201aa7b",
     "src/dylib/feats/webui.c": "1eb45ff76c4f1f6a2c8fe8a2965d81dcc3f1aa463d39ca5c01c0632dc622f286",
     "src/dylib/feats/webui.h": "d75bd6459d312c25dd509116bcc658c7aac668a70ee43467c21cddf91ef2e990",
